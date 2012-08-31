@@ -43,7 +43,10 @@ def main():
                         key.append(randomsocket.read(1))
                 else:
                     key=args.key
-                cmd = protocol.modify_command("add",args.keyid,key)
+                enc_key= bytearray()
+                for x in range(0,32):
+                    enc_key.append(randomsocket.read(1))
+                cmd = protocol.modify_command("add",args.keyid,key,enc_key)
                 sock.send(pickle.dumps(cmd))
                 while True:
                     data = sock.recv(1024)
@@ -55,7 +58,12 @@ def main():
                         if res.result == "OK":
                             print "KeyID "+args.keyid+ " added with key:"
                             for b in key:
-                                sys.stdout.write(str(b))
+                                sys.stdout.write(hex(b))
+                                sys.stdout.write(' ')
+                            print "\nenc_key is:"
+                            for b in enc_key:
+                                sys.stdout.write(hex(b))
+                                sys.stdout.write(' ')
                     else:
                         print "hmmmm"
                         print res.__class__

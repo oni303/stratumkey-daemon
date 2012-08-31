@@ -6,10 +6,11 @@ Created on 25.08.2012
 
 
 class modify_command:
-    def __init__(self,command,id,key):
+    def __init__(self,command,id,key,enc_key):
         self.command=command
         self.id=id
         self.key=key
+        self.enc_key=key
    
 class response:
     def __init__(self,command,result):

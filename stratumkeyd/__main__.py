@@ -11,6 +11,7 @@ import signal
 import socket
 import pickle
 from types import *
+from Crypto.Cipher import AES
 
 import stratumkeyd
 import protocol
@@ -56,13 +57,14 @@ class SerialThread (threading.Thread):
             if (command == 0x01): # Key auth
                 cipher = hashlib.sha256()
                 keyid = self.ser.readID()
-
+                enc_key = self.ser.readBytes(32)
                 challenge = random.read(32)
                 self.ser.writeBytes(challenge)
                 response = self.ser.readBytes(32)
 
                 key = self.db.getKey(keyid)
-
+                enc = AES.new(str(enc_key), AES.MODE_CBC)
+                key= bytearray(enc.decrypt(key))
                 if (key != None):
                     key_and_challenge = bytearray()
                     for i in range(0,32):
@@ -112,11 +114,14 @@ class ControlThread (threading.Thread):
             d=self.conn.recv(1024)
             if not d:
                 continue
-            print len(d)
+            #print len(d)
             data= pickle.loads(d)
             if isinstance(data, protocol.modify_command) or isinstance(data,stratumkeyd.protocol.modify_command):
                 if data.command=="add":
-                    self.db.addKey(data.id, str(data.key))
+                    
+                    enc = AES.new(str(data.enc_key), AES.MODE_CBC)
+                    key= enc.encrypt(str(data.key))
+                    self.db.addKey(data.id, str(key))
                     response = protocol.response(data.command,"FAILED")
                     test=self.db.getKey(data.id)
                     if test:
